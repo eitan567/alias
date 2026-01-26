@@ -6,6 +6,46 @@ import * as THREE from 'three';
 import { Team } from '../types';
 import { TOTAL_STEPS, TEAM_COLORS } from '../constants';
 
+// Fix for TypeScript not recognizing R3F elements in JSX.IntrinsicElements
+// Augmenting both global JSX and React.JSX to ensure compatibility
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any;
+      boxGeometry: any;
+      meshStandardMaterial: any;
+      group: any;
+      circleGeometry: any;
+      meshBasicMaterial: any;
+      ringGeometry: any;
+      planeGeometry: any;
+      cylinderGeometry: any;
+      sphereGeometry: any;
+      ambientLight: any;
+      pointLight: any;
+    }
+  }
+  
+  namespace React {
+    namespace JSX {
+      interface IntrinsicElements {
+        mesh: any;
+        boxGeometry: any;
+        meshStandardMaterial: any;
+        group: any;
+        circleGeometry: any;
+        meshBasicMaterial: any;
+        ringGeometry: any;
+        planeGeometry: any;
+        cylinderGeometry: any;
+        sphereGeometry: any;
+        ambientLight: any;
+        pointLight: any;
+      }
+    }
+  }
+}
+
 interface BoardProps {
   teams: Team[];
   currentTeamId: number;

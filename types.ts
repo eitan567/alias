@@ -31,4 +31,13 @@ export interface GameSettings {
   turnDuration: number; // in seconds
   winningScore: number; // Board steps
   selectedDifficulty: Difficulty | 'ALL';
+  topicId: string;
+  grade: string;
+}
+
+export interface GameTopic {
+  id: string;
+  name: string;
+  description: string;
+  terms: GeneticTerm[];
 }

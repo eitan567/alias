@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { GamePhase, Team, GameSettings, GeneticTerm } from './types';
-import { GENETICS_TERMS, TOTAL_STEPS } from './constants';
+import { GAME_CONTENT, TOTAL_STEPS } from './constants';
 import SetupScreen from './components/SetupScreen';
 import Board from './components/Board';
 import GameControls from './components/GameControls';
@@ -15,17 +15,9 @@ const App: React.FC = () => {
   const [currentCard, setCurrentCard] = useState<GeneticTerm | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
   const [isTeacherMode, setIsTeacherMode] = useState(false);
+  const [usedTerms, setUsedTerms] = useState<Set<string>>(new Set());
 
   const currentTeam = teams[currentTeamIndex];
-
-  const getRandomCard = useCallback(() => {
-    if (!settings) return null;
-    let pool = GENETICS_TERMS;
-    if (settings.selectedDifficulty !== 'ALL') {
-      pool = pool.filter(t => t.difficulty === settings.selectedDifficulty);
-    }
-    return pool[Math.floor(Math.random() * pool.length)];
-  }, [settings]);
 
   const startGame = (initialTeams: Team[], gameSettings: GameSettings) => {
     setTeams(initialTeams);
@@ -33,12 +25,42 @@ const App: React.FC = () => {
     setTimeLeft(gameSettings.turnDuration);
     setPhase(GamePhase.PLAYING_EXPLAIN); 
     setCurrentTeamIndex(0);
-    setCurrentCard(null); 
+    setCurrentCard(null);
+    setUsedTerms(new Set()); // Reset used terms when starting new game
   };
 
   const handleStartTurn = () => {
     if (!settings) return;
-    const card = getRandomCard();
+    
+    // 1. Get Base Pool for Topic & Difficulty
+    const topic = GAME_CONTENT[settings.topicId] || GAME_CONTENT['genetics'];
+    let pool = topic.terms;
+
+    if (settings.selectedDifficulty !== 'ALL') {
+      pool = pool.filter(t => t.difficulty === settings.selectedDifficulty);
+    }
+    
+    // Safety check - if pool is empty (e.g. strict filtering), revert to all terms
+    if (pool.length === 0) {
+        pool = topic.terms;
+    }
+
+    // 2. Filter out terms that have already been used
+    let available = pool.filter(t => !usedTerms.has(t.term));
+    
+    // 3. If deck is exhausted, reset used terms (shuffle deck)
+    let newUsedTerms = new Set(usedTerms);
+    if (available.length === 0) {
+        available = pool;
+        newUsedTerms.clear();
+    }
+
+    // 4. Pick random card
+    const card = available[Math.floor(Math.random() * available.length)];
+    
+    // 5. Update state
+    newUsedTerms.add(card.term);
+    setUsedTerms(newUsedTerms);
     setCurrentCard(card);
     setTimeLeft(settings.turnDuration);
     setPhase(GamePhase.PLAYING_EXPLAIN);
@@ -80,11 +102,14 @@ const App: React.FC = () => {
     setPhase(GamePhase.SETUP);
     setTeams([]);
     setSettings(null);
+    setUsedTerms(new Set());
   };
 
   if (phase === GamePhase.SETUP) {
     return <SetupScreen onStartGame={startGame} />;
   }
+
+  const currentTopicName = settings ? GAME_CONTENT[settings.topicId]?.name : 'גנטיקה';
 
   return (
     <div className="w-full h-screen bg-slate-50 relative flex flex-col lg:flex-row overflow-hidden" dir="rtl">
@@ -111,7 +136,7 @@ const App: React.FC = () => {
 
        {/* Top Bar (Overlay) */}
        <div className="absolute top-0 right-0 left-0 p-3 lg:p-4 z-20 flex justify-between items-start pointer-events-none">
-         <h1 className="text-xl lg:text-2xl font-black text-white/20 select-none">אליאס גנטיקה</h1>
+         <h1 className="text-xl lg:text-2xl font-black text-white/20 select-none">אליאס {currentTopicName}</h1>
          <div className="flex gap-2 lg:gap-4 pointer-events-auto">
             <button 
                onClick={() => setIsTeacherMode(!isTeacherMode)}
